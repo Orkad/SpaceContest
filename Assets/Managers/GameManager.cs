@@ -1,0 +1,62 @@
+﻿using UnityEngine;
+using UnityEngine.Networking;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine.Events;
+
+public class GameManager:MonoBehaviour{
+	public static GameManager singleton;
+	public NetworkView nView {get{return GetComponent<NetworkView>();}}
+	public bool gameStarted = false;
+	
+	void Awake() {
+		#if UNITY_EDITOR
+		if(!NetworkClient.active)
+			Application.LoadLevel("Menu");
+		#endif
+		if(singleton != null){
+			Debug.LogError("Il ne peut y avoir qu'un seul GameManager");
+			Destroy(gameObject);
+			return;
+		}
+		singleton = this;
+		GenerateSolarSystem();
+	}
+	
+	public float distance = 150f;
+	public float size = 5f;
+	public float rotationSpeed = 2f; 
+	[Range(10f,90f)]
+	public float randomness = 50f;
+	public GameObject planetPrefab;
+	
+	public void GenerateSolarSystem() {
+		if(!planetPrefab)
+			return;
+		for(int i=0;i<Data.totalPlanet;i++){
+			Planet planet = Instantiate<Planet>(planetPrefab.GetComponent<Planet>());
+			Vector3 randomPlanetPosition = RandomCircle(Sun.Instance.transform.position,distance.RandomByPercent(randomness));
+			float randomPlanetSize = size.RandomByPercent(randomness);
+			
+			planet.transform.position = randomPlanetPosition;
+			planet.radius = randomPlanetSize;
+			planet.planetName = NameGenerator.generateName(Random.Range(3,10));//Genere un nom aléatoire pour la planette créée
+			NetworkServer.Spawn(planet.gameObject);
+			
+			//Server Extra component
+			planet.gameObject.AddComponent<RotateAround>().around = Sun.Instance.gameObject;
+			planet.GetComponent<RotateAround>().speed = rotationSpeed.RandomByPercent(randomness);
+			planet.gameObject.AddComponent<Rotate>().speed = 20;
+		}
+		Debug.Log("World Generated");
+	}
+	
+	public static Vector3 RandomCircle ( Vector3 center ,   float radius  ){
+		float ang = Random.value * 360;
+		Vector3 pos;
+		pos.x = center.x + radius * Mathf.Sin(ang * Mathf.Deg2Rad);
+		pos.y = center.y;
+		pos.z = center.z + radius * Mathf.Cos(ang * Mathf.Deg2Rad);
+		return pos;
+	}
+}

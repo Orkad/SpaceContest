@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f4d002105b1e0c84da9677ac154f98ea
+timeCreated: 1441471865
+licenseType: Free
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - m_PlayerPrefab: {fileID: 149300, guid: 645a383d971ecd54091a32bad9658dad, type: 2}
+  - matchMaker: {instanceID: 0}
+  - planetPrefab: {fileID: 11465002, guid: 668473ca64095984cab3d684c09b9d03, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
