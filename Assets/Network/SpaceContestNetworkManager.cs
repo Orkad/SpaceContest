@@ -1,10 +1,6 @@
-﻿using UnityEngine;
-using UnityEngine.Networking;
+﻿using UnityEngine.Networking;
 using UnityEngine.Networking.Match;
-using UnityEngine.Networking.NetworkSystem;
 using UnityEngine.Networking.Types;
-using System.Collections;
-using System.Collections.Generic;
 
 public class SpaceContestNetworkManager : NetworkManager{
 
@@ -21,6 +17,13 @@ public class SpaceContestNetworkManager : NetworkManager{
 		singleton.matchMaker.JoinMatch(id,password,OnMatchJoinedResponse);
 		Worker.singleton.Work("Connexion au serveur en cours");
 	}
+
+    public static void JoinMatch(string ip)
+    {
+        singleton.networkAddress = ip;
+        singleton.StartClient();
+        Worker.singleton.Work("Connexion au serveur (" + ip + ")");
+    }
 	
 	public static void RefreshMatchList(){
 		singleton.StartMatchMaker();
@@ -60,12 +63,11 @@ public class SpaceContestNetworkManager : NetworkManager{
 	public override void OnClientError (NetworkConnection conn, int errorCode)
 	{
 		base.OnClientError (conn, errorCode);
-		Popup.instance.ShowWith("Erreur","Impossible de rejoindre la partie selectionnée");
-		Worker.singleton.EndWork();
+        Worker.singleton.FailWork("Impossible de rejoindre la partie selectionnée");
 	}
 	
 	public override void OnClientDisconnect (NetworkConnection conn)
 	{
-		Popup.instance.ShowWith("Déconnexion","Vous avez été déconnecté");
+        Worker.singleton.FailWork("Impossible de rejoindre la partie");
 	}
 }

@@ -15,7 +15,7 @@ public interface ICostable:IItem{
 
 public static class ICostableExtention{
 	public static bool CanBuy(this Planet p,ICostable c){
-		if(c.Available() && p.industry > c.cost)
+		if(c.Available() && p.resources > c.cost)
 			return true;
 		return false;
 	}

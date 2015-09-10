@@ -29,8 +29,8 @@ public class PlanetInformation : FadeInOut {
 	protected override void UpdateShow (){
 		populationProgressBar.maxValue = focusedPlanet.maxPopulation;
 		populationProgressBar.value = focusedPlanet.population;
-		industryPrograssBar.maxValue = focusedPlanet.maxIndustry;
-		industryPrograssBar.value = focusedPlanet.industry;
+		industryPrograssBar.maxValue = focusedPlanet.maxResources;
+		industryPrograssBar.value = focusedPlanet.resources;
 		//productionText.text = "+" + focusedPlanet.populationProduction.ToString("F2");
 		temperatureText.text = focusedPlanet.temperature.ToString("F0") + "C°";
 		//if(focusedPlanet.owner)

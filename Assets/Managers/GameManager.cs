@@ -1,8 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.Networking;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine.Events;
 
 public class GameManager:MonoBehaviour{
 	public static GameManager singleton;
@@ -20,7 +17,8 @@ public class GameManager:MonoBehaviour{
 			return;
 		}
 		singleton = this;
-		GenerateSolarSystem();
+        if(NetworkServer.active)
+		    GenerateSolarSystem();
 	}
 	
 	public float distance = 150f;

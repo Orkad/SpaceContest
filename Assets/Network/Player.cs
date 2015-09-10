@@ -3,7 +3,7 @@ using UnityEngine.Networking;
 
 
 public class Player:NetworkBehaviour{
-	//Static
+	
 	public static readonly Color enemyColor = Color.red;
 	public static readonly Color neutralColor = Color.yellow;
 	public static readonly Color myColor = Color.green;
@@ -16,20 +16,27 @@ public class Player:NetworkBehaviour{
 				return p;
 		return null;
 	}
+
+    public static Player FindPlayerByID(uint id)
+    {
+        Player[] players = FindObjectsOfType<Player>();
+        foreach (Player p in players)
+            if (p.playerId == id)
+                return p;
+        return null;
+    }
 	
-	[SyncVar]
-	public short playerId;
 	[SyncVar]
 	public string playerName;
-	
+	public uint playerId { get { return netId.Value; } }
+
 	public Color color{get{return isLocalPlayer ? myColor : enemyColor;}}
 	public bool isMe(){return isLocalPlayer;}
 	
 	public override void OnStartLocalPlayer (){
 		me = this;
 		CmdSendIdentity(Data.playerName);
-		//CmdSpawnGameElement("Coloniser",playerName);
-		CmdSpawnGameElement("Viper",playerName);
+		CmdSpawnGameElement("Viper");
 	}
 	
 	public void Update(){
@@ -39,15 +46,14 @@ public class Player:NetworkBehaviour{
 	[Command]
 	void CmdSendIdentity(string name){
 		playerName = name;
-		playerId = (short)netId.Value;
 	}
 	
 	[Command]
-	void CmdSpawnGameElement(string prefabName,string pName){
+	void CmdSpawnGameElement(string prefabName){
 		GameObject gameElement = Instantiate(NetworkManager.singleton.spawnPrefabs.Find(s => s.name == prefabName));
 		if(!gameElement)
 			return;
-		gameElement.GetComponent<GameElement>().owner = (short)netId.Value;
-		NetworkServer.Spawn(gameElement);
+		gameElement.GetComponent<GameElement>().owner = netId.Value;
+        NetworkServer.SpawnWithClientAuthority(gameElement, gameObject);
 	}
 }

@@ -16,10 +16,12 @@ public class Ship : GameElement,IDamageable{
 	
 	public bool canColonise{get{return settlers > 0f;}}
 	public string description;
+    public float buildTime;
+    public float populationCost;
+    public float resourceCost;
 	
 	[SyncVar]
 	public float health;
-	[SyncVar]
 	public float maxHealth;
 	public float range;
 	public float attackSpeed;
@@ -28,41 +30,22 @@ public class Ship : GameElement,IDamageable{
 	
 	public float cost; //Le cout industriel du vaisseau
 	public float settlers; //Colons si > 0 devient un vaisseau de colonisation
-	
-	public Transform target;
-	
 
-	#region MonoBehaviour
-	
-	void Update (){
-		if(target)
-			agent.destination = target.position;
-			
-		if(settlers > 0f)
-			return;
-		/*if(timeBeforeNextAttack < 0f){
-			if(target != null && this.CanAttack(target.GetComponent<IDamageable>(),range))
-				Attack(target.GetComponent<IDamageable>());
-			else if(DamageableEnemiesInRange().Length > 0 && this.CanAttack(DamageableEnemiesInRange()[0],range))
-				Attack(DamageableEnemiesInRange()[0]);
-		}
-		timeBeforeNextAttack -= Time.deltaTime;*/
-	}
-	
-	#endregion
-	
-	void Explode(){
-		
-	}
+    public Transform target;
 	
 	private void Attack(IDamageable enemy){
 		Projectile.Shoot(transform,enemy.transform,projectilePrefab);
 		timeBeforeNextAttack = attackSpeed;
 	}
-	
-	#region IDamageable
-	
-	public void Damage(float amount){
+
+    #region IDamageable
+
+    void Explode()
+    {
+
+    }
+
+    public void Damage(float amount){
 		health -= amount;
 		if(health < 0)
 			Explode();
@@ -77,37 +60,38 @@ public class Ship : GameElement,IDamageable{
 	}
 	
 	#endregion
+
+
+    [ServerCallback]
+    void Update()
+    {
+        if (target)
+            agent.destination = target.position;
+    }
+
+    [Command]
+    void CmdMoveToGameElement(NetworkInstanceId id)
+    {
+        target = ClientScene.FindLocalObject(id).transform;
+    }
+
+    [Command]
+    void CmdMoveToPosition(Vector3 pos)
+    {
+        agent.destination = pos;
+        target = null;
+    }
 	
-	#region Orders
-	
-	public void OrderStop(){
-		target = null;
-		//agent.Stop();
-	}
-	
-	[Command]
-	public void CmdMoveToGameElement(NetworkInstanceId targetNetId){
-		target = ClientScene.FindLocalObject(targetNetId).transform;
-	}
-	
-	[Command]
-	public void CmdMoveToPosition(Vector3 newTarget){
-		agent.destination = newTarget;
-		target = null;
-	}
-	
-	#endregion
-	
-	public override void Action (GameElement otherElement)
+	public override void Action (GameElement gameElement)
 	{
-		if(this.IsMine())
-			CmdMoveToGameElement(otherElement.netId);
-	}
+        if (hasAuthority)
+            CmdMoveToGameElement(gameElement.netId);
+    }
 	
 	public override void Action (Vector3 position)
 	{
-		if(this.IsMine())
-			CmdMoveToPosition(position);
+        if (hasAuthority)
+            CmdMoveToPosition(position);
 	}
 	
 	#region Search Function

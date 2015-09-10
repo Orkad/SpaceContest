@@ -1,14 +1,13 @@
 ﻿using UnityEngine;
 using UnityEngine.Networking;
-using System.Collections;
 
 
 public abstract class GameElement : NetworkBehaviour,IOwnable,ISelectable {
 	
 	//OWNER
-	[SyncVar]
-	public short _owner;
-	public short owner{
+	[SyncVar(hook="OnOwnerChange")]
+	public uint _owner;
+	public uint owner{
 		get{
 			return _owner;
 		}
@@ -16,6 +15,11 @@ public abstract class GameElement : NetworkBehaviour,IOwnable,ISelectable {
 			_owner = value;
 		}
 	}
+    public GameObject GetPlayerOwner()
+    {
+        return Player.FindPlayerByID(owner).gameObject;
+    }
+    public virtual void OnOwnerChange(uint owner){ Debug.Log("Owner Changed"); }
 	
 	//RADIUS
 	public float radius{

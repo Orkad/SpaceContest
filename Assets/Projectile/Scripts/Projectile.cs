@@ -8,8 +8,10 @@ public interface IEntity{
 	float radius{get;}
 }
 
-public interface IOwnable:IEntity{
-	short owner{get;}
+public interface IOwnable:IEntity
+{
+	uint owner{get;}
+    bool hasAuthority { get; }
 }
 
 public interface IDamageable:IOwnable{
@@ -21,7 +23,6 @@ public interface ISelectable{
 	void OnSelect();
 	void OnDeselect();
 }
-
 
 public static class IExtension{
 	public static bool CanAttack(this IOwnable ownable,IDamageable damageable,float range){
