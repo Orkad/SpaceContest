@@ -10,14 +10,14 @@ public class HostMenu : Menu {
 	public Button OkButton;
 	
 	void Awake(){
-		OkButton.onClick.AddListener(() => CreateMatch());
+		OkButton.onClick.AddListener(() => StartHost());
 		gameNameInput.text = Data.gameName;
 		gameNameInput.onEndEdit.AddListener((string str) => Data.gameName = str);
 		maxPlayerInput.text = Data.maxPlayer.ToString();
 		maxPlayerInput.onValueChanged.AddListener((string str) => Data.maxPlayer = int.Parse(str));
 	}
 	
-	void CreateMatch(){
-		SpaceContestNetworkManager.HostMatch();
+	void StartHost(){
+		SpaceContestNetworkManager.HostMatch(false);
 	}
 }

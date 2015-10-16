@@ -11,7 +11,7 @@ public class ShipButton : ButtonBehaviour{
 	public override void SetTooltipValue (){
 		Tooltip.instance.title = ship.name;
 		Tooltip.instance.description = ship.description;
-		Tooltip.instance.cost = ship.cost;
+		Tooltip.instance.cost = 0;
 	}
 	
 	public override void OnClickEffect (){

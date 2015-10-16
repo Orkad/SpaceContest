@@ -34,7 +34,7 @@ public class CameraScript: Singleton<CameraScript> {
 	private float y;
 	
 	void Start(){
-		SelectionManager.Instance.EventSelect.AddListener(() => RefreshTarget());
+		SelectionManager.Instance.EventSelect += RefreshTarget;
 	}
 	
 	void Update(){
@@ -60,8 +60,8 @@ public class CameraScript: Singleton<CameraScript> {
 		transform.position = position;
 	}
 	
-	public void RefreshTarget(){
-		target = SelectionManager.Instance.selection[0];
+	public void RefreshTarget(List<GameElement> p_ListGameElement){
+		target = p_ListGameElement[0];
 		if(target){
 			minDistance = target.radius * minDistanceRatio;
 			maxDistance = target.radius * maxDistanceRatio;

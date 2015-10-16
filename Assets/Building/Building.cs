@@ -1,15 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public abstract class Building : MonoBehaviour,ICostable{
+public abstract class Building : MonoBehaviour{
 	[Multiline]
 	public string _description;
 	public Sprite _icon;
 	public int level = 0;
 	public int maxLevel = 10;
 	public float costPerLevel;
-	
-	#region ICOSTABLE interface
 	
 	public string description{get{return _description;}}
 	public Sprite icon{get{return _icon;}}
@@ -24,8 +22,6 @@ public abstract class Building : MonoBehaviour,ICostable{
 	public void BuyEffect(){
 		LevelUp ();
 	}
-	
-	#endregion
 	
 	/// <summary>
 	/// Incrémente le niveau du batiment de 1

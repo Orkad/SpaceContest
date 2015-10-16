@@ -6,10 +6,17 @@ public class SpaceContestNetworkManager : NetworkManager{
 
 	//ASKER
 
-	public static void HostMatch(){
-		singleton.StartMatchMaker();
-		singleton.matchMaker.CreateMatch(Data.gameName,(uint)Data.maxPlayer,true,"",OnMatchCreateResponse);
-		Worker.singleton.Work("Création du match en cours");
+	public static void HostMatch(bool register){
+        if (register)
+        {
+            singleton.StartMatchMaker();
+            singleton.matchMaker.CreateMatch(Data.gameName, (uint)Data.maxPlayer, true, "", OnMatchCreateResponse);
+            Worker.singleton.Work("Création du match en cours");
+        }
+        else
+        {
+            singleton.StartHost();
+        }
 	}
 	
 	public static void JoinMatch(NetworkID id,string password = ""){
@@ -70,4 +77,23 @@ public class SpaceContestNetworkManager : NetworkManager{
 	{
         Worker.singleton.FailWork("Impossible de rejoindre la partie");
 	}
+
+    public override void OnServerReady(NetworkConnection conn)
+    {
+        base.OnServerReady(conn);
+    }
+
+    #region Accesseurs Statiques
+
+    public static bool IsPrefabExists<T>(string name)
+    {
+        return singleton.spawnPrefabs.Exists(g => g.name == name && g.GetComponent<T>() != null);
+    }
+
+    public static T GetPrefab<T>(string name)
+    {
+        return singleton.spawnPrefabs.Find(g => g.name == name).GetComponent<T>();
+    }
+
+    #endregion
 }

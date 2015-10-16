@@ -1,43 +1,26 @@
 ﻿using UnityEngine;
 using UnityEngine.Networking;
-using System.Collections;
 using System.Collections.Generic;
-using System;
-using System.Linq;
-
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class Ship : GameElement,IDamageable{
 	public NavMeshAgent agent{get{return GetComponent<NavMeshAgent>();}}
-	
-	//SHIP NAME
-	[SyncVar]
-	public string shipName;
-	
-	public bool canColonise{get{return settlers > 0f;}}
+
+    public bool canColonise;
 	public string description;
     public float buildTime;
+    public float maxHealth;
+    public float range;
+    public float attackSpeed;
     public float populationCost;
-    public float resourceCost;
-	
-	[SyncVar]
+    public float materialCost;
+    public Projectile projectilePrefab;
+
+    [SyncVar]
 	public float health;
-	public float maxHealth;
-	public float range;
-	public float attackSpeed;
 	private float timeBeforeNextAttack;
-	public Projectile projectilePrefab;
+    private Transform target;
 	
-	public float cost; //Le cout industriel du vaisseau
-	public float settlers; //Colons si > 0 devient un vaisseau de colonisation
-
-    public Transform target;
-	
-	private void Attack(IDamageable enemy){
-		Projectile.Shoot(transform,enemy.transform,projectilePrefab);
-		timeBeforeNextAttack = attackSpeed;
-	}
-
     #region IDamageable
 
     void Explode()
@@ -61,12 +44,18 @@ public class Ship : GameElement,IDamageable{
 	
 	#endregion
 
-
     [ServerCallback]
     void Update()
     {
         if (target)
             agent.destination = target.position;
+    }
+
+    [Command]
+    private void CmdAttack(NetworkInstanceId id)
+    {
+        Projectile.Shoot(transform, ClientScene.FindLocalObject(id).transform, projectilePrefab);
+        timeBeforeNextAttack = attackSpeed;
     }
 
     [Command]
@@ -85,7 +74,13 @@ public class Ship : GameElement,IDamageable{
 	public override void Action (GameElement gameElement)
 	{
         if (hasAuthority)
-            CmdMoveToGameElement(gameElement.netId);
+        {
+            if (gameElement.IsMine())
+                CmdMoveToGameElement(gameElement.netId);
+            else
+                CmdAttack(gameElement.netId);
+        }
+            
     }
 	
 	public override void Action (Vector3 position)
@@ -96,15 +91,15 @@ public class Ship : GameElement,IDamageable{
 	
 	#region Search Function
 	
-	private IDamageable GetClosestDamageable(IDamageable[] damageables){
+	private GameObject GetClosestGameObject(GameObject[] gameObjects){
 		float range = Mathf.Infinity;
-		IDamageable closest = null;
-		foreach (IDamageable damageable in damageables)
+        GameObject closest = null;
+		foreach (GameObject go in gameObjects)
 		{
-			float dist = Vector3.Distance(damageable.transform.position, transform.position);
+			float dist = Vector3.Distance(go.transform.position, transform.position);
 			if (dist < range)
 			{
-				closest = damageable;
+				closest = go;
 				range = dist;
 			}
 		}
@@ -116,7 +111,7 @@ public class Ship : GameElement,IDamageable{
 		List<IDamageable> list = new List<IDamageable>();
 		foreach(Collider col in objects){
 			IDamageable damageable = col.GetComponent<IDamageable>();
-			if(damageable != null && this.CanAttack(damageable,range))
+			if(damageable != null)
 				list.Add(damageable);
 		}
 		return list.ToArray();

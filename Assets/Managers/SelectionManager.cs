@@ -1,23 +1,24 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
-using UnityEngine.Events;
 
+using UnityEngine;
 
-[System.Serializable]
-public class FloatEvent:UnityEvent<float>{}
+public enum MouseButton : int { left, right, middle }
 
 public class SelectionManager : Singleton<SelectionManager> {
 	public RectTransform multipleSelectionRectangle;
-	
-	#region NEW Select
-	public UnityEvent EventSelect;
-	public UnityEvent EventDeselect;
+
+    #region GameElement SELECTION
+
+    public event Action<List<GameElement>> EventSelect;
+	public event Action<List<GameElement>> EventDeselect;
+    public event Action<GameElement> EventHover;
 	public List<GameElement> selection;
-	
-	public void Deselect(){
+    private GameElement hoverGameElement;
+
+    public void Deselect(){
 		if(selection.Count != 0){
-			EventDeselect.Invoke();
+            EventDeselect(selection);
 			selection.ForEach(x => x.OnDeselect());
 			selection.Clear();
 		}
@@ -29,7 +30,7 @@ public class SelectionManager : Singleton<SelectionManager> {
 			return;
 		element.OnSelect();
 		selection.Add(element);
-		EventSelect.Invoke();
+        EventSelect(selection);
 	}
 	
 	public void Select(List<GameElement> elements){
@@ -38,14 +39,12 @@ public class SelectionManager : Singleton<SelectionManager> {
 			return;
 		elements.ForEach(e => e.OnSelect());
 		selection.AddRange(elements);
-		EventSelect.Invoke();
+		EventSelect(selection);
 	}
 	
 	#endregion
 	
-	private GameElement hoverGameElement;
 	
-	public enum MouseButton:int{left,right,middle}
 	
 	void Start(){
 		

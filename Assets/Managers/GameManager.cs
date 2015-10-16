@@ -3,7 +3,6 @@ using UnityEngine.Networking;
 
 public class GameManager:MonoBehaviour{
 	public static GameManager singleton;
-	public NetworkView nView {get{return GetComponent<NetworkView>();}}
 	public bool gameStarted = false;
 	
 	void Awake() {
@@ -31,18 +30,20 @@ public class GameManager:MonoBehaviour{
 	public void GenerateSolarSystem() {
 		if(!planetPrefab)
 			return;
-		for(int i=0;i<Data.totalPlanet;i++){
+		for(int i=0;i<3;i++){
 			Planet planet = Instantiate<Planet>(planetPrefab.GetComponent<Planet>());
 			Vector3 randomPlanetPosition = RandomCircle(Sun.Instance.transform.position,distance.RandomByPercent(randomness));
 			float randomPlanetSize = size.RandomByPercent(randomness);
 			
 			planet.transform.position = randomPlanetPosition;
 			planet.radius = randomPlanetSize;
-			planet.planetName = NameGenerator.generateName(Random.Range(3,10));//Genere un nom aléatoire pour la planette créée
+
+            //Genere un nom aléatoire pour la planette créée
+            planet.planetName = NameGenerator.generateName(Random.Range(3,10));
 			NetworkServer.Spawn(planet.gameObject);
-			
-			//Server Extra component
-			planet.gameObject.AddComponent<RotateAround>().around = Sun.Instance.gameObject;
+
+            //Server Extra component
+            planet.gameObject.AddComponent<RotateAround>().around = Sun.Instance.gameObject;
 			planet.GetComponent<RotateAround>().speed = rotationSpeed.RandomByPercent(randomness);
 			planet.gameObject.AddComponent<Rotate>().speed = 20;
 		}
@@ -57,4 +58,21 @@ public class GameManager:MonoBehaviour{
 		pos.z = center.z + radius * Mathf.Cos(ang * Mathf.Deg2Rad);
 		return pos;
 	}
+
+    public static Planet GetEmptyPlanet()
+    {
+        Planet[] pList = FindObjectsOfType<Planet>();
+        foreach(Planet p in pList)
+        {
+            if (p.IsNeutral())
+                return p;
+        }
+        return null;
+    }
+
+    public void StartGame()
+    {
+        foreach (NetworkConnection connection in NetworkServer.localConnections)
+            GetEmptyPlanet().ChangeOwner(connection);
+    }
 }

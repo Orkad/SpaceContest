@@ -14,6 +14,8 @@ public class FadeInOut : MonoBehaviour{
 	public UnityEvent OnHide;
 	
 	protected virtual void UpdateShow(){}
+
+
 	private void Update(){
 		if(show){
 			UpdateShow();
@@ -21,9 +23,15 @@ public class FadeInOut : MonoBehaviour{
 		}
 		else
 			canvasGroup.alpha -=  Time.deltaTime / transitionDuration;
-		canvasGroup.blocksRaycasts = canvasGroup.interactable =  IsShown();
+		canvasGroup.blocksRaycasts = IsShown();
+        canvasGroup.interactable = InterractableCondition();
 		canvasGroup.alpha = Mathf.Clamp01(canvasGroup.alpha);
 	}
+
+    protected virtual bool InterractableCondition()
+    {
+        return IsShown();
+    }
 	
 	public void StartHidden(){
 		canvasGroup.alpha = 0f;

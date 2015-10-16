@@ -1,62 +1,80 @@
 ﻿using UnityEngine;
 using UnityEngine.Networking;
-using System.Collections;
-using System.Collections.Generic;
+using UnityEngine.Networking.Types;
+
+public enum PlanetMod
+{
+    NONE,       // valeur par défaut, aucun effet
+    FEED,       // NOURRIR : +++population --eau
+    DRILL,      // FORRER : ++matière +eau -population
+    BUILD,      // CONSTRUIRE : +vaisseau ---matière -population -temps
+    RESEARCH,   // RECHERCHER : +amélioration -temps
+    DEFENCE     // DEFENSE : réduit les pertes de population lors d'affrontements
+}
 
 public class Planet : GameElement,IDamageable{
 
-    public enum PlanetMod
-    {
-        NONE,       // valeur par défaut, aucun effet
-        FEED,       // NOURRIR : +++population --eau
-        DRILL,      // FORRER : ++matière ++eau --population
-        WORK,       // TRAVAILLER : ++ressource -matière -population
-        BUILD,      // CONSTRUIRE : +vaisseau ---ressource -population -temps
-        RESEARCH,   // RECHERCHER : +amélioration -temps
-        DEFENCE     // DEFENSE : réduit les pertes de population lors d'affrontements
-    }
+    #region Properties
 	
-	//NOM
+	/// <summary>
+    /// Nom de la planete
+    /// </summary>
 	[SyncVar]
 	public string planetName;
 
-    //EAU
+    /// <summary>
+    /// Eau présente sur la planete
+    /// </summary>
     [SyncVar]
     public float water;
+
+    /// <summary>
+    /// Quantité d'eau maximale pouvant être stockée
+    /// </summary>
     [SyncVar]
     public float maxWater;
 	
-	//POPULATION
+	/// <summary>
+    /// Population présente sur la planete
+    /// </summary>
 	[SyncVar]
 	public float population;
+
+    /// <summary>
+    /// Population maximale sur la planete
+    /// </summary>
     [SyncVar]
     public float maxPopulation;
 
-    //MATIERE
+    /// <summary>
+    /// Matière présente sur la planete
+    /// </summary>
     [SyncVar]
     public float rawMaterial;
+
+    /// <summary>
+    /// Quantité maximale de matière possible sur la planete
+    /// </summary>
     [SyncVar]
     public float maxRawMaterial;
 
-    //RESSOURCES
-    [SyncVar]
-    public float resources;
-    [SyncVar]
-	public float maxResources;
-
-    //MODE DE PLANETE
+    /// <summary>
+    /// Le mode de production de la planete
+    /// </summary>
     [SyncVar]
     public PlanetMod planetMod = PlanetMod.NONE;
-	
-	//FUNCTION
-    public float temperature
-    {
-        get
-        {
-            return 0f;
-        }
-    }
-    
+
+    //SHIP BUILD
+    public Ship shipToBuildPrefab;
+    public float timerShipToBuild;
+
+    /// <summary>
+    /// Temperature de la planete
+    /// </summary>
+    public float temperature{get{return 0f;}}
+
+    #endregion
+
     //COMMAND
     [Command]
     public void CmdChangePlanetMod(PlanetMod mod)
@@ -71,7 +89,6 @@ public class Planet : GameElement,IDamageable{
         water = maxWater = 100f;
         rawMaterial = maxRawMaterial = 100f;
         maxPopulation = 100f;
-        maxResources = 100f;
     }
 
     //SERVER UPDATE
@@ -90,13 +107,8 @@ public class Planet : GameElement,IDamageable{
                 water += 2 * unit;
                 population -= unit;
                 break;
-            case PlanetMod.WORK:
-                resources += 2 * unit;
-                rawMaterial -= 2 * unit;
-                population -= unit;
-                break;
             case PlanetMod.BUILD:
-                ShipBuildProcess();
+                ShipBuildUpdate();
                 break;
             case PlanetMod.RESEARCH:
             case PlanetMod.DEFENCE:
@@ -106,52 +118,49 @@ public class Planet : GameElement,IDamageable{
         water = Mathf.Clamp(water, 0f, maxWater);
         population = Mathf.Clamp(population, 0f, maxPopulation);
         rawMaterial = Mathf.Clamp(rawMaterial, 0f, maxRawMaterial);
-        resources = Mathf.Clamp(resources, 0f, maxResources);
     }
 
-    //SHIP BUILD
-    public Ship currentShipToBuild;
-    public float shipToBuildTimer;
+    
 
-    public void ShipBuildProcess()
+    [ServerCallback]
+    public void ShipBuildUpdate()
     {
-        if (currentShipToBuild)
+        if (shipToBuildPrefab)
         {
-            shipToBuildTimer -= Time.deltaTime;
-            if (shipToBuildTimer <= 0f)
-                NetworkServer.SpawnWithClientAuthority(currentShipToBuild.gameObject,GetPlayerOwner());
+            timerShipToBuild -= Time.deltaTime;
+            if (timerShipToBuild <= 0f)
+                NetworkServer.SpawnWithClientAuthority(shipToBuildPrefab.gameObject, connectionToClient);
         }
     }
 
-    public bool CanBuy(Ship ship)
-    {
-        if (!ship)
-            return false;
-        return population >= ship.populationCost && resources >= ship.resourceCost;
-    }
-
-    public void Buy(Ship ship){
-        population -= ship.populationCost;
-        resources -= ship.resourceCost;
-        currentShipToBuild = ship;
-    }
-
     [Command]
-    public void CmdAddShipToBuild(string shipPrefabName)
+    public void CmdBuyShip(string shipName)
     {
-        currentShipToBuild = NetworkManager.singleton.spawnPrefabs.Find(x => x.name == shipPrefabName).GetComponent<Ship>();
-        if (currentShipToBuild)
-            shipToBuildTimer = currentShipToBuild.buildTime;
+        if (SpaceContestNetworkManager.IsPrefabExists<Ship>(shipName))
+        {
+            Ship shipPrefab = SpaceContestNetworkManager.GetPrefab<Ship>(shipName);
+            //IF CAN BUY SHIP
+            if (population >= shipPrefab.populationCost && rawMaterial >= shipPrefab.materialCost)
+            {
+                population -= shipPrefab.populationCost;
+                rawMaterial -= shipPrefab.materialCost;
+                shipToBuildPrefab = shipPrefab;
+                RpcBuyShip(shipName);
+            }
+        }
     }
 
-	public void BuildShip (Ship shipPrefab){
-		
-	}
-	
-	public void Colonise(Player p,float pop){
-		//_owner = p;
-		population = pop;
-	}
+    [ClientRpc]
+    public void RpcRemoveShipToBuild()
+    {
+        shipToBuildPrefab = null;
+    }
+
+    [ClientRpc]
+    public void RpcBuyShip(string shipName)
+    {
+        shipToBuildPrefab = SpaceContestNetworkManager.GetPrefab<Ship>(shipName);
+    }
 	
 	public void Damage(float amount){
 		population -= amount;
